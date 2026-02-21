@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>威志的 AR 數位名片</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/3.3.2/aframe/build/aframe-ar.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.4.0/dist/aframe-extras.min.js"></script>
+    
+    <style>
+      /* UI: 右側懸浮選單 */
+      #ui-container {
+        position: absolute;
+        top: 20px; right: 10px; z-index: 10;
+        display: flex; flex-direction: column; gap: 10px;
+      }
+      .btn {
+        background: rgba(0, 0, 0, 0.7);
+        color: white; border: 1px solid rgba(255,255,255,0.3);
+        padding: 12px; border-radius: 20px;
+        font-family: 'Microsoft JhengHei', sans-serif; text-align: center;
+        backdrop-filter: blur(5px);
+        cursor: pointer; transition: 0.3s;
+        user-select: none;
+      }
+      .btn:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.2); }
+    </style>
+  </head>
+
+  <body style="margin: 0; overflow: hidden;">
+    
+    <div id="ui-container">
+      <div class="btn" onclick="showImage()">🖼️ 平面名片</div>
+      <div class="btn" onclick="window.open('https://youtu.be/dA0uEJms7zM?si=7V0Ljdmd2wS5kTaK&t=1', '_blank')">🎥 影片介紹</div>
+      <div class="btn" onclick="window.open('https://tim6404.github.io/design-works/', '_blank')">🌐 個人網頁</div>
+      <div class="btn" onclick="show3D()">🤖 3D 動態</div>
+      <div class="btn" onclick="window.open('https://github.com', '_blank')">🔗 原始碼</div>
+    </div>
+
+    <a-scene 
+      arjs="sourceType: webcam; debugUIEnabled: false;"
+      renderer="logarithmicDepthBuffer: true;"
+      vr-mode-ui="enabled: false">
+      
+      <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
+      <a-light type="directional" color="#ffffff" intensity="0.8" position="1 2 1"></a-light>
+
+      <a-assets>
+        <img id="card-img" src="my-card.jpg">
+        <a-asset-item id="asset-model" src="robot.glb"></a-asset-item>
+      </a-assets>
+
+      <a-marker type="pattern" 
+          url="pattern-qr.ioi.tw.patt"
+          emitevents="true"
+          smooth="true"
+          smoothCount="10"
+          smoothTolerance="0.01"
+          smoothThreshold="5">
+               
+        <a-plane id="display-plane" 
+         src="#card-img" 
+         position="0 0 0" rotation="-90 0 0" width="1.5" height="1"
+         visible="false"
+         animation__scale="property: scale; from: 0 0 0; to: 1.5 1.5 1.5; dur: 1500; easing: easeOutElastic; startEvents: playScale"
+         animation__float="property: position; from: 0 0 0; to: 0 0.2 0; dir: alternate; dur: 1000; loop: true; startEvents: playFloat">
+        </a-plane>
+        
+        <a-entity id="display-model" gltf-model="#asset-model" scale="0.5 0.5 0.5" visible="false"></a-entity>
+
+      </a-marker>
+    </a-scene>
+
+   <script>
+  const plane = document.querySelector('#display-plane');
+  const model = document.querySelector('#display-model');
+  const marker = document.querySelector('a-marker');
+  const scene = document.querySelector('a-scene');
+
+  // 將顯示名片的邏輯獨立出來，並確保動畫能從頭播放
+  function showImage() {
+    if(model) model.setAttribute('visible', false);
+    if(plane) {
+      plane.setAttribute('visible', true);
+      // 【關鍵】：先將實體的比例與位置強制歸零，準備迎接動畫
+      plane.setAttribute('scale', '0 0 0');
+      plane.setAttribute('position', '0 0 0');
+      
+      // 精準發送訊號觸發 HTML 中寫好的 startEvents
+      plane.emit('playScale');
+      plane.emit('playFloat');
+    }
+  }
+
+  // 右側選單切換 3D 模型的函數
+  function show3D() {
+    if(plane) plane.setAttribute('visible', false);
+    if(model) model.setAttribute('visible', true);
+  }
+
+  // 【核心修正】：等待 AR 核心場景徹底載入完畢後，才啟動掃描監聽
+  scene.addEventListener('loaded', () => {
+    
+    // 事件 1：相機成功捕捉到標記時
+    marker.addEventListener('markerFound', () => {
+      showImage(); 
+    });
+
+    // 事件 2：相機失去標記時，單純隱藏即可，下次找到時會自動重新觸發
+    marker.addEventListener('markerLost', () => {
+      if(plane) plane.setAttribute('visible', false);
+      if(model) model.setAttribute('visible', false);
+    });
+
+  });
+</script>
+  </body>
+</html>
