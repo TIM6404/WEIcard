@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.4.0/dist/aframe-extras.min.js"></script>
     
     <style>
-      /* UI: 右側懸浮選單 */
       #ui-container {
         position: absolute;
         top: 20px; right: 10px; z-index: 10;
@@ -51,13 +50,7 @@
         <a-asset-item id="asset-model" src="robot.glb"></a-asset-item>
       </a-assets>
 
-      <a-marker type="pattern" 
-          url="pattern-qr.ioi.tw.patt"
-          emitevents="true"
-          smooth="true"
-          smoothCount="10"
-          smoothTolerance="0.01"
-          smoothThreshold="5">
+     <a-marker preset="hiro">
                
         <a-plane id="display-plane" 
          src="#card-img" 
@@ -73,47 +66,42 @@
     </a-scene>
 
    <script>
-  const plane = document.querySelector('#display-plane');
-  const model = document.querySelector('#display-model');
-  const marker = document.querySelector('a-marker');
-  const scene = document.querySelector('a-scene');
+      const plane = document.querySelector('#display-plane');
+      const model = document.querySelector('#display-model');
+      const marker = document.querySelector('a-marker');
+      const scene = document.querySelector('a-scene');
 
-  // 將顯示名片的邏輯獨立出來，並確保動畫能從頭播放
-  function showImage() {
-    if(model) model.setAttribute('visible', false);
-    if(plane) {
-      plane.setAttribute('visible', true);
-      // 【關鍵】：先將實體的比例與位置強制歸零，準備迎接動畫
-      plane.setAttribute('scale', '0 0 0');
-      plane.setAttribute('position', '0 0 0');
-      
-      // 精準發送訊號觸發 HTML 中寫好的 startEvents
-      plane.emit('playScale');
-      plane.emit('playFloat');
-    }
-  }
+      function showImage() {
+        if(model) model.setAttribute('visible', false);
+        if(plane) {
+          plane.setAttribute('visible', true);
+          
+          // 【修正重點 2】：移除手動設定 scale 與 position 的程式碼。
+          // 直接利用 A-Frame 動畫屬性裡的 `from: 0 0 0` 即可，避免與 emit 衝突。
+          
+          // 精準發送訊號觸發 HTML 中寫好的 startEvents
+          plane.emit('playScale');
+          plane.emit('playFloat');
+        }
+      }
 
-  // 右側選單切換 3D 模型的函數
-  function show3D() {
-    if(plane) plane.setAttribute('visible', false);
-    if(model) model.setAttribute('visible', true);
-  }
+      function show3D() {
+        if(plane) plane.setAttribute('visible', false);
+        if(model) model.setAttribute('visible', true);
+      }
 
-  // 【核心修正】：等待 AR 核心場景徹底載入完畢後，才啟動掃描監聽
-  scene.addEventListener('loaded', () => {
-    
-    // 事件 1：相機成功捕捉到標記時
-    marker.addEventListener('markerFound', () => {
-      showImage(); 
-    });
+      scene.addEventListener('loaded', () => {
+        
+        marker.addEventListener('markerFound', () => {
+          showImage(); 
+        });
 
-    // 事件 2：相機失去標記時，單純隱藏即可，下次找到時會自動重新觸發
-    marker.addEventListener('markerLost', () => {
-      if(plane) plane.setAttribute('visible', false);
-      if(model) model.setAttribute('visible', false);
-    });
+        marker.addEventListener('markerLost', () => {
+          if(plane) plane.setAttribute('visible', false);
+          if(model) model.setAttribute('visible', false);
+        });
 
-  });
-</script>
+      });
+    </script>
   </body>
 </html>
