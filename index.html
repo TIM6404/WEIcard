@@ -1,106 +1,115 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
     <title>威志的 AR 數位名片</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/3.3.2/aframe/build/aframe-ar.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.4.0/dist/aframe-extras.min.js"></script>
     
     <style>
-      #ui-container {
+      /* 右側彈出式選單介面設計 */
+      #ui-menu {
         position: absolute;
-        top: 20px; right: 10px; z-index: 10;
-        display: flex; flex-direction: column; gap: 10px;
+        top: 50%;
+        right: 15px;
+        transform: translateY(-50%);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
       }
-      .btn {
-        background: rgba(0, 0, 0, 0.7);
-        color: white; border: 1px solid rgba(255,255,255,0.3);
-        padding: 12px; border-radius: 20px;
-        font-family: 'Microsoft JhengHei', sans-serif; text-align: center;
-        backdrop-filter: blur(5px);
-        cursor: pointer; transition: 0.3s;
+      
+      .menu-btn {
+        background: rgba(0, 0, 0, 0.75);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-family: 'Microsoft JhengHei', sans-serif;
+        font-weight: bold;
+        font-size: 16px;
+        text-align: center;
+        backdrop-filter: blur(4px);
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        transition: transform 0.2s ease, background 0.2s ease;
         user-select: none;
       }
-      .btn:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.2); }
+
+      .menu-btn:active {
+        transform: scale(0.92);
+        background: rgba(80, 80, 80, 0.9);
+      }
     </style>
   </head>
 
   <body style="margin: 0; overflow: hidden;">
     
-    <div id="ui-container">
-      <div class="btn" onclick="showImage()">🖼️ 平面名片</div>
-      <div class="btn" onclick="window.open('https://youtu.be/dA0uEJms7zM?si=7V0Ljdmd2wS5kTaK&t=1', '_blank')">🎥 影片介紹</div>
-      <div class="btn" onclick="window.open('https://tim6404.github.io/design-works/', '_blank')">🌐 個人網頁</div>
-      <div class="btn" onclick="show3D()">🤖 3D 動態</div>
-      <div class="btn" onclick="window.open('https://github.com', '_blank')">🔗 原始碼</div>
+    <div id="ui-menu">
+      <div class="menu-btn" onclick="showCard()">🖼️ 我的名片</div>
+      <div class="menu-btn" onclick="window.open('https://tim6404.github.io/design-works/', '_blank')">🌐 個人簡介</div>
+      <div class="menu-btn" onclick="window.open('https://youtu.be/s9_33EVIjTE?si=Fv1qheLwAIIatRGJ', '_blank')">🎥 數位人介紹</div>
+      <div class="menu-btn" onclick="showModel()">🤖 3D 展示</div>
     </div>
 
-    <a-scene 
-      arjs="sourceType: webcam; debugUIEnabled: false;"
-      renderer="logarithmicDepthBuffer: true;"
-      vr-mode-ui="enabled: false">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="logarithmicDepthBuffer: true;" vr-mode-ui="enabled: false">
       
-      <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
-      <a-light type="directional" color="#ffffff" intensity="0.8" position="1 2 1"></a-light>
-
       <a-assets>
         <img id="card-img" src="my-card.jpg">
-        <a-asset-item id="asset-model" src="robot.glb"></a-asset-item>
+        <a-asset-item id="robot-model" src="robot.glb"></a-asset-item>
       </a-assets>
 
-     <a-marker preset="hiro">
-               
-        <a-plane id="display-plane" 
-         src="#card-img" 
-         position="0 0 0" rotation="-90 0 0" width="1.5" height="1"
-         visible="false"
-         animation__scale="property: scale; from: 0 0 0; to: 1.5 1.5 1.5; dur: 1500; easing: easeOutElastic; startEvents: playScale"
-         animation__float="property: position; from: 0 0 0; to: 0 0.2 0; dir: alternate; dur: 1000; loop: true; startEvents: playFloat">
-        </a-plane>
+      <a-marker type="pattern" url="WEI.patt" emitevents="true" id="ar-marker" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
         
-        <a-entity id="display-model" gltf-model="#asset-model" scale="0.5 0.5 0.5" visible="false"></a-entity>
+        <a-image id="card-entity" 
+                 src="#card-img" 
+                 width="1.5" height="1" 
+                 rotation="-90 0 0" 
+                 visible="false"
+                 animation="property: position; from: -0.15 0 0; to: 0.15 0 0; dir: alternate; dur: 2000; loop: true; easing: easeInOutSine">
+        </a-image>
+
+        <a-entity id="model-entity" 
+                  gltf-model="#robot-model" 
+                  scale="0.15 0.15 0.15" 
+                  position="0 0 0.15" 
+                  rotation="-90 0 0"
+                  visible="false">
+        </a-entity>
 
       </a-marker>
+      
+      <a-entity camera></a-entity>
     </a-scene>
 
-   <script>
-      const plane = document.querySelector('#display-plane');
-      const model = document.querySelector('#display-model');
-      const marker = document.querySelector('a-marker');
-      const scene = document.querySelector('a-scene');
+    <script>
+      const card = document.querySelector('#card-entity');
+      const model = document.querySelector('#model-entity');
+      const marker = document.querySelector('#ar-marker');
 
-      function showImage() {
-        if(model) model.setAttribute('visible', false);
-        if(plane) {
-          plane.setAttribute('visible', true);
-          
-          // 【修正重點 2】：移除手動設定 scale 與 position 的程式碼。
-          // 直接利用 A-Frame 動畫屬性裡的 `from: 0 0 0` 即可，避免與 emit 衝突。
-          
-          // 精準發送訊號觸發 HTML 中寫好的 startEvents
-          plane.emit('playScale');
-          plane.emit('playFloat');
-        }
+      // 點擊「我的名片」按鈕的執行動作
+      function showCard() {
+        card.setAttribute('visible', 'true');
+        model.setAttribute('visible', 'false');
       }
 
-      function show3D() {
-        if(plane) plane.setAttribute('visible', false);
-        if(model) model.setAttribute('visible', true);
+      // 點擊「3D展示」按鈕的執行動作
+      function showModel() {
+        card.setAttribute('visible', 'false');
+        model.setAttribute('visible', 'true');
       }
 
-      scene.addEventListener('loaded', () => {
-        
-        marker.addEventListener('markerFound', () => {
-          showImage(); 
-        });
+      // 掃描到標記時，自動產生名片
+      marker.addEventListener('markerFound', () => {
+        showCard(); 
+      });
 
-        marker.addEventListener('markerLost', () => {
-          if(plane) plane.setAttribute('visible', false);
-          if(model) model.setAttribute('visible', false);
-        });
-
+      // 離開標記時，隱藏所有物件確保畫面乾淨
+      marker.addEventListener('markerLost', () => {
+        card.setAttribute('visible', 'false');
+        model.setAttribute('visible', 'false');
       });
     </script>
   </body>
